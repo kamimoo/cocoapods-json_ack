@@ -1,43 +1,69 @@
+require 'jsonpath'
+require 'CFPropertyList'
+
 module Pod
   class Command
-    # This is an example of a cocoapods plugin adding a top-level subcommand
-    # to the 'pod' command.
-    #
-    # You can also create subcommands of existing or new commands. Say you
-    # wanted to add a subcommand to `list` to show newly deprecated pods,
-    # (e.g. `pod list deprecated`), there are a few things that would need
-    # to change.
-    #
-    # - move this file to `lib/pod/command/list/deprecated.rb` and update
-    #   the class to exist in the the Pod::Command::List namespace
-    # - change this class to extend from `List` instead of `Command`. This
-    #   tells the plugin system that it is a subcommand of `list`.
-    # - edit `lib/cocoapods_plugins.rb` to require this file
-    #
-    # @todo Create a PR to add your plugin to CocoaPods/cocoapods.org
-    #       in the `plugins.json` file, once your plugin is released.
-    #
-    class Json_ack < Command
-      self.summary = 'Short description of cocoapods-json_ack.'
+    class JSONAck < Command
+      module PlistKey
+        TITLE = :Title
+        FOOTER_TEXT = :FooterText
+        TYPE = :Type
+      end
+      PlistKey.freeze
+
+      self.summary = 'Merge license info in JSON to Acknowledgements.plist'
 
       self.description = <<-DESC
-        Longer description of cocoapods-json_ack.
+        Merge license info in JSON to Acknowledgements.plist
       DESC
 
-      self.arguments = 'NAME'
+      def self.options
+        [
+          ['--in=FILE_PATH', 'Acknowledgements file'],
+          ['--json=FILE_PATH', 'JSON file which contains license info']
+        ]
+      end
+
+      def self.merge(args)
+        self.new(args).run
+      end
 
       def initialize(argv)
-        @name = argv.shift_argument
-        super
+        if argv.is_a?(CLAide::ARGV)
+          UI.puts argv.arguments
+          @acknowledgements_path = argv.option('in')
+          @json_path = argv.option('json')
+          @json_pattern = {
+            PlistKey::TITLE => '$..name',
+            PlistKey::FOOTER_TEXT => '$..licenseSources.license.sources[0].text'
+          }
+          super
+        else
+          @acknowledgements_path = argv[:in]
+          @json_path = argv[:json]
+          @json_pattern = argv[:pattern]
+        end
       end
 
       def validate!
         super
-        help! 'A Pod name is required.' unless @name
+        help! 'Input files are required.' unless @acknowledgements_path && @json_path
       end
 
       def run
-        UI.puts "Add your implementation for the cocoapods-json_ack plugin in #{__FILE__}"
+        main_plist = CFPropertyList::List.new(file: @acknowledgements_path)
+        json = File.read(@json_path)
+        titles, texts = @json_pattern.map { |_, v| JsonPath.on(json, v) }
+        titles.zip(texts).each do |title, text|
+          data = CFPropertyList.guess(
+            PlistKey::FOOTER_TEXT => text,
+            PlistKey::TITLE => title,
+            PlistKey::TYPE => 'PSGroupSpecifier'
+          )
+          main_plist.value.value['PreferenceSpecifiers'].value.push(data)
+        end
+        main_plist.formatted = true
+        UI.puts main_plist.to_str(CFPropertyList::List::FORMAT_XML)
       end
     end
   end

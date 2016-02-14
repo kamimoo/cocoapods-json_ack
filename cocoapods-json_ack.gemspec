@@ -5,7 +5,7 @@ require 'cocoapods-json_ack/gem_version.rb'
 
 Gem::Specification.new do |spec|
   spec.name          = 'cocoapods-json_ack'
-  spec.version       = CocoapodsJson_ack::VERSION
+  spec.version       = JSONAck::VERSION
   spec.authors       = ['Ryo Kamimura']
   spec.email         = ['arcobaleno7+git@gmail.com']
   spec.description   = %q{A short description of cocoapods-json_ack.}

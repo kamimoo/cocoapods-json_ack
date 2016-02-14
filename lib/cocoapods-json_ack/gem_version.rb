@@ -1,3 +1,3 @@
-module CocoapodsJson_ack
+module JSONAck
   VERSION = "0.0.1"
 end

@@ -1,6 +1,5 @@
 source 'https://rubygems.org'
 
-# Specify your gem's dependencies in cocoapods-json_ack.gemspec
 gemspec
 
 group :development do

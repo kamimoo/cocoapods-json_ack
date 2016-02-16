@@ -30,7 +30,6 @@ module Pod
 
       def initialize(argv)
         if argv.is_a?(CLAide::ARGV)
-          UI.puts argv.arguments
           @acknowledgements_path = argv.option('in')
           @json_path = argv.option('json')
           @json_pattern = {
@@ -63,7 +62,7 @@ module Pod
           main_plist.value.value['PreferenceSpecifiers'].value.push(data)
         end
         main_plist.formatted = true
-        UI.puts main_plist.to_str(CFPropertyList::List::FORMAT_XML)
+        main_plist.to_str(CFPropertyList::List::FORMAT_XML)
       end
     end
   end
